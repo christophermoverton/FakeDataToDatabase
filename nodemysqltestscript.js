@@ -11,7 +11,7 @@ var box = new DB({
                            "typeid","INTEGER not NULL", "catid", "INTEGER not NULL", 
 			   "lastname","VARCHAR(255)", "firstname",
 			   "VARCHAR(255)","minit","VARCHAR(1)",
-			   "ssn","SMALLINT", "dob","DATE", "gender",
+			   "ssn","INTEGER", "dob","DATE", "gender",
 			   "VARCHAR(1)", "marital","BOOLEAN",
                            "address1","VARCHAR(255)",
 			   "address2","VARCHAR(255)",
@@ -30,13 +30,14 @@ function revDate(datestr){
   var datepart = datestr.toLocaleDateString().split("/");
   var bdstr = '';
   bdstr += datepart[2];
-  bdstr += '-'+datepart[1]+'-';
+  
   if (datepart[0].length == 1){
-     bdstr += '0' + datepart[0];
+     bdstr += '-0' + datepart[0];
   }
   else{
-     bdstr += datepart[0];
+     bdstr += '-'+datepart[0];
   }
+  bdstr += '-'+datepart[1];
   return bdstr;
 }
 
@@ -47,6 +48,15 @@ function timeDiff(time1, time2){
    var difference_ms = time1_ms - time2_ms;
    var age = Math.round(Math.round(difference_ms/one_day)/365.25);
    return age;
+}
+
+function boolval(boolv){
+   if (boolv){
+      return "TRUE";
+   }
+   else{
+      return "FALSE";
+   }
 }
 
 var mysql = require('mysql');
@@ -65,7 +75,7 @@ for(i = 0; i < count; i++){
    fDat['address1'] = faker.address.streetAddress();
    fDat['city'] = faker.address.city();
    fDat['state'] = faker.address.stateAbbr();
-   fDat['zipcode'] = faker.address.zipCode();
+   fDat['zipcode'] = faker.address.zipCode().slice(0,5);
    fDat['email'] = faker.internet.email();
    fDat['homephone'] = faker.phone.phoneNumberFormat();
    fDat['officephone'] = faker.phone.phoneNumber();
@@ -75,6 +85,7 @@ for(i = 0; i < count; i++){
    fDat['password'] = faker.internet.password();
    var year = chance.year({min: 1953, max:1998});
    var bday = chance.birthday({year:year});
+   /*
    var bdays = bday.toLocaleDateString().split("/");
    var bdstr = '';
    bdstr += bdays[2];
@@ -84,8 +95,8 @@ for(i = 0; i < count; i++){
    }
    else{
      bdstr += bdays[0];
-   }
-   fDat['dob'] = bdstr;
+   }*/
+   fDat['dob'] = revDate(bday);
    var cday = new Date();
    var one_day=1000*60*60*24;
    var bday_ms = bday.getTime();
@@ -104,8 +115,9 @@ for(i = 0; i < count; i++){
       fDat['firstname'] = chance.first({gender: 'Male'});
    }
    fDat['minit'] = chance.character();
-   fDat['admin'] = faker.random.boolean();
-   fDat['superadmin'] = faker.random.boolean();
+  
+   fDat['admin'] = boolval(faker.random.boolean());
+   fDat['superadmin'] =  boolval(faker.random.boolean());
    var startdate = new Date();
    var startdate2 = startdate;
    if (diff18 > 0){
@@ -123,18 +135,18 @@ for(i = 0; i < count; i++){
    //console.log(lastsignupdate);
    fDat['lastsignupdate'] = revDate(lastsignupdate);
    if (chance.normal() > .8){
-      fDat['active'] = false;
+      fDat['active'] = boolval(false);
    }
    else{
-      fDat['active'] = true;
+      fDat['active'] = boolval(true);
    }
    fDat['webpage'] = faker.internet.domainName();
    fDat['numlogins'] = chance.integer({min: 0, max: 4000});
    if (chance.normal() < .35){
-      fDat['marital'] = true;
+      fDat['marital'] = boolval(true);
    }
    else{
-      fDat['marital'] = false;
+      fDat['marital'] = boolval(false);
    }
    fDat['ssn'] = chance.ssn({dashes:false});
    arr.push(fDat);
@@ -156,14 +168,16 @@ connection.connect();
 var queryString = 'INSERT INTO Employee (lastname, firstname, minit, address1, city, state, zipcode,';
 queryString += 'email, webpage, homephone, officephone, cellphone, regularhours,';
 queryString += 'gender, dob, ssn, login, password, admin, superadmin, numlogins,';
-queryString += 'marital, datesignup, lastsignupdate, active) VALUES ';
+queryString += 'marital, datesignup, lastlogindate, active) VALUES ';
 var c = 0;
-for (let r of arr){
-   queryString += '('+r['lastname']+','+r['firstname']+','+r['minit'];
-   queryString += ','+r['address1']+','+r['city']+','+r['state']+','+r['zipcode'];
-   queryString += ','+r['gender']+','+r['dob']+','+r['ssn']+','+r['login']+','+r['password'];
-   queryString += ','+r['admin']+','+r['superadmin']+','+r['numlogins']+','+r['marital'];
-   queryString += ','+r['datesignup']+','+r['lastsignupdate']+','+r['active']+')';
+for (r of arr){
+   queryString += '("'+r['lastname']+'","'+r['firstname']+'","'+r['minit'];
+   queryString += '","'+r['address1']+'","'+r['city']+'","'+r['state']+'","'+r['zipcode'];
+   queryString += '","'+r['email']+'","'+r['webpage']+'","'+r['homephone']+'","'+r['officephone'];
+   queryString += '","'+r['cellphone']+'",'+r['regularhours'];
+   queryString += ',"'+r['gender']+'","'+r['dob']+'",'+r['ssn']+',"'+r['login']+'","'+r['password'];
+   queryString += '",'+r['admin']+','+r['superadmin']+','+r['numlogins']+','+r['marital'];
+   queryString += ',"'+r['datesignup']+'","'+r['lastsignupdate']+'",'+r['active']+')';
    if (c == arr.length-1){
       queryString += ';';
    }
