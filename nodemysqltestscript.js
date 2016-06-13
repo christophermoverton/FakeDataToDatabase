@@ -149,6 +149,10 @@ for(i = 0; i < count; i++){
       fDat['marital'] = boolval(false);
    }
    fDat['ssn'] = chance.ssn({dashes:false});
+   fDat['deptid'] = chance.integer({min:1, max:40});
+   fDat['typeid'] = chance.integer({min:1, max:200});
+   fDat['jobid'] = chance.integer({min:200, max:400});
+   fDat['catid'] = chance.integer({min:1001, max: 2002});
    arr.push(fDat);
 }
 
@@ -165,13 +169,15 @@ var connection = mysql.createConnection(
  
 connection.connect();
  
-var queryString = 'INSERT INTO Employee (lastname, firstname, minit, address1, city, state, zipcode,';
+var queryString = 'INSERT INTO Employee (deptid, jobid, typeid, catid, lastname, '; 
+queryString += 'firstname, minit, address1, city, state, zipcode,';
 queryString += 'email, webpage, homephone, officephone, cellphone, regularhours,';
 queryString += 'gender, dob, ssn, login, password, admin, superadmin, numlogins,';
 queryString += 'marital, datesignup, lastlogindate, active) VALUES ';
 var c = 0;
 for (r of arr){
-   queryString += '("'+r['lastname']+'","'+r['firstname']+'","'+r['minit'];
+   queryString += '('+r['deptid']+','+r['jobid']+','+r['typeid']+','+r['catid']+',"'+r['lastname']+'","';
+   queryString += r['firstname']+'","'+r['minit'];
    queryString += '","'+r['address1']+'","'+r['city']+'","'+r['state']+'","'+r['zipcode'];
    queryString += '","'+r['email']+'","'+r['webpage']+'","'+r['homephone']+'","'+r['officephone'];
    queryString += '","'+r['cellphone']+'",'+r['regularhours'];
