@@ -25,6 +25,8 @@ var box = new DB({
 			   "numlogins","INTEGER", "lastlogindate", "DATE",
 			   "loginip", "VARCHAR(255)", "datesignup","DATE",
 			   "dateupdated","DATE", "active", "BOOLEAN"},
+
+
 */
 function revDate(datestr){
   var datepart = datestr.toLocaleDateString().split("/");
@@ -65,7 +67,7 @@ var Faker = require('Faker');
 var ssn = require('ssn');
 var Chance = require('chance');
 var chance = new Chance();
-var count = 10;
+var count = 30;
 var i;
 var arr = [];
 for(i = 0; i < count; i++){
@@ -126,6 +128,7 @@ for(i = 0; i < count; i++){
    }
    console.log(startdate);
    fDat['datesignup'] = revDate(startdate);
+   fDat['datesignup2'] = startdate;
    var lastsignupdate = startdate2
    if (startdate != startdate2){
       var timediff2 = timeDiff(startdate2, startdate);
@@ -155,7 +158,53 @@ for(i = 0; i < count; i++){
    fDat['catid'] = chance.integer({min:1001, max: 2002});
    arr.push(fDat);
 }
+/*
+	      new String[]{"Messages","Imid","INTEGER not NULL AUTO_INCREMENT",
+                           "empid","INTEGER",
+			   "message", "MEDIUMTEXT", "postedby", "VARCHAR(255)",
+			   "dateposted", "DATE", "numviews", "INTEGER", 
+			   "active", "BOOLEAN"}
+*/
+var arr2 = [];
+//generate messages
+for(i = 0; i < chance.integer({min:20, max:100}); i++){
+    var fDat = {}; //generating message dat
+    fDat['empid'] = chance.integer({min:1, max: (count-1)});
+    fDat['message'] = faker.lorem.paragraph();
+    fDat['postedby'] = arr[fDat['empid']]['email'];
+    var startdate = new Date();
+    var startdate2 = startdate;
+    startdate = arr[fDat['empid']]['datesignup2'];
+    var dateposted = startdate2;
+    if (startdate != startdate2){
+      var timediff2 = timeDiff(startdate2, startdate);
+      var year3 = chance.year({min: 2016-timediff2, max:2016});
+      dateposted = chance.date({year:year3});
+    }
+    fDat['dateposted'] = revDate(dateposted);
+    fDat['numviews'] = chance.integer({min:1, max:100});
+    if (chance.normal() > .8){
+      fDat['active'] = boolval(false);
+    }
+    else{
+      fDat['active'] = boolval(true);
+    }
+    arr2.push(fDat);
+}
+/*
+              new String[]{"Locks","lockid", "INTEGER not NULL AUTO_INCREMENT", 
+                           "empid", "INTEGER", 
+			   "datelock", "DATE", "reasonlock", "VARCHAR(2)",
+			   "active", "BOOLEAN"},
+*/
 
+var arr3 = [];
+for(i = 0; i<arr.length; i++){
+   var startdate = arr[i]['datesignup2'];
+   var startdate2 = new Date();
+   var payrolllocks = 24.0*timeDiff(startdate2, startdate);
+   
+}
 console.log(arr);
  
 var connection = mysql.createConnection(
@@ -185,6 +234,37 @@ for (r of arr){
    queryString += '",'+r['admin']+','+r['superadmin']+','+r['numlogins']+','+r['marital'];
    queryString += ',"'+r['datesignup']+'","'+r['lastsignupdate']+'",'+r['active']+')';
    if (c == arr.length-1){
+      queryString += ';';
+   }
+   else{
+      queryString += ',';
+   }
+   c++;
+}
+console.log('Query...'+queryString);
+connection.query(queryString, function(err, rows, fields) {
+    if (err) throw err;
+ 
+    for (var i in rows) {
+        console.log('Post Titles: ', rows[i]);
+    }
+});
+
+/*
+	      new String[]{"Messages","Imid","INTEGER not NULL AUTO_INCREMENT",
+                           "empid","INTEGER",
+			   "message", "MEDIUMTEXT", "postedby", "VARCHAR(255)",
+			   "dateposted", "DATE", "numviews", "INTEGER", 
+			   "active", "BOOLEAN"}
+*/
+
+var queryString = 'INSERT INTO Messages (empid, message, postedby, dateposted, numviews, '; 
+queryString += 'active) VALUES ';
+c = 0;
+for (r of arr2){
+   queryString += '('+r['empid']+',"'+r['message']+'","';
+   queryString += r['postedby']+'","'+r['dateposted']+'",'+r['numviews']+','+r['active']+')';
+   if (c == arr2.length-1){
       queryString += ';';
    }
    else{
