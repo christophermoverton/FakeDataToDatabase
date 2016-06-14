@@ -199,11 +199,108 @@ for(i = 0; i < chance.integer({min:20, max:100}); i++){
 */
 
 var arr3 = [];
+var empSalaryDat = {};
 for(i = 0; i<arr.length; i++){
    var startdate = arr[i]['datesignup2'];
    var startdate2 = new Date();
    var payrolllocks = 24.0*timeDiff(startdate2, startdate);
+   var j;
+   var datelock = startdate2;
+   var fulltime = 'TRUE';
+   var fulltime2 = true; 
+   if (!chance.bool()){
+      var fulltime = 'FALSE';
+      var fulltime2 = false;
+   }
    
+   var hourlypay = chance.float({min: 12.0000, max: 30.0000});
+   empSalaryDat[i] = {fulltime: fulltime, fulltime2: fulltime2, 
+                            hourlypay: hourlypay};
+   for (j = 0; j<payrolllocks; j++){
+      var fDat = {};
+      var datelock = new Date(datelock);
+      fDat['prevdatelock'] = datelock;
+      fDat['fulltime'] = fulltime;
+      fDat['fulltime2'] = fulltime2;
+      if (j == 0){
+         if (datelock.getDate() < 15){
+            datelock.setDate(15);
+         }
+         else{
+            datelock.setMonth(datelock.getMonth()+1);
+            datelock.setDate(1);
+         }
+      }
+      else{
+         if (datelock.getDate() == 1){
+             datelock.setDate(15);
+         }
+         else{
+             datelock.setMonth(datelock.getMonth()+1);
+             datelock.setDate(1);
+         }
+      }
+      fDat['datelock'] = datelock;
+      fDat['reasonlock'] = chance.word({length:2});
+      fDat['active'] = 'FALSE';
+      arr3.push(fDat);
+   }
+}
+
+/*
+	      new String[]{"Payroll", "payrollid", "INTEGER not NULL AUTO_INCREMENT", 
+			   "empid", "INTEGER", "date", "DATE", "startday", 
+			   "DATE", "endday", "DATE", "hoursworked", "FLOAT", 
+			   "grosspay", "DECIMAL(19,4)", "deductions", 
+			   "DECIMAL(19,4)", "netpay", "DECIMAL(19,4)"},
+*/
+
+var arr4 = [];
+
+for (r in arr3){
+   fDat = {};
+   var startdate = r['prevdatelock'];
+   var endday = new Date(r['datelock']);
+   endday.setDate(endday.getDate()-1);
+   fDat['date'] = new Date(r['datelock']);
+   fDat['hourlypay'] = chance.float({min: 12.0000, max: 30.0000});
+   var hoursworked = 10.0;
+   if (r['fulltime2']){
+      hoursworked = 40.0;
+      if (chance.normal() > .75){
+          hoursworked += chance.float({min: 0, max: 20});
+      }
+   }
+   else{
+      hoursworked = 20.0;
+      hoursworked += chance.float({min: 0, max: 10});    
+   }
+   fDat['hoursworked'] = hoursworked;
+   var grosspay = hoursworked*fDat['hourlypay'];
+   var deduction = grosspay*.025;
+   var taxes = grosspay*.12;
+   var netpay = grosspay - deduction -taxes;
+   fDat['grosspay'] = grosspay;
+   fDat['deductions'] = deduction;
+   fDat['taxes'] = taxes;
+   fDat['netpay'] = netpay;
+   arr4.push(fDat);
+}
+
+/*
+              new String[]{"Salary","salaryid", "INTEGER not NULL AUTO_INCREMENT", 
+			   "empid", "INTEGER", "hourlyrate", "DECIMAL(19,4)",
+			   "note" , "VARCHAR(255)"},
+*/
+
+arr5 = [];
+for (r in empSalaryDat){
+   fDat = {};
+   var empDat = empSalaryDat[r];
+   fDat['empid'] = r;
+   fDat['hourlyrate'] = empDat['hourlyrate'];
+   fDat['note'] = "";
+   arr5.push(fDat);
 }
 console.log(arr);
  
@@ -281,4 +378,94 @@ connection.query(queryString, function(err, rows, fields) {
     }
 });
  
+/*
+              new String[]{"Locks","lockid", "INTEGER not NULL AUTO_INCREMENT", 
+                           "empid", "INTEGER", 
+			   "datelock", "DATE", "reasonlock", "VARCHAR(2)",
+			   "active", "BOOLEAN"},
+*/
+
+var queryString = 'INSERT INTO Locks (empid, datelock, reasonlock, '; 
+queryString += 'active) VALUES ';
+c = 0;
+for (r of arr3){
+   queryString += '('+r['empid']+',"'+r['datelock']+'","';
+   queryString += r['reasonlock']+'",'+r['active']+')';
+   if (c == arr2.length-1){
+      queryString += ';';
+   }
+   else{
+      queryString += ',';
+   }
+   c++;
+}
+console.log('Query...'+queryString);
+connection.query(queryString, function(err, rows, fields) {
+    if (err) throw err;
+ 
+    for (var i in rows) {
+        console.log('Post Titles: ', rows[i]);
+    }
+});
+
+/*
+	      new String[]{"Payroll", "payrollid", "INTEGER not NULL AUTO_INCREMENT", 
+			   "empid", "INTEGER", "date", "DATE", "startday", 
+			   "DATE", "endday", "DATE", "hoursworked", "FLOAT", 
+			   "grosspay", "DECIMAL(19,4)", "deductions", 
+			   "DECIMAL(19,4)", "netpay", "DECIMAL(19,4)"},
+*/
+
+var queryString = 'INSERT INTO Payroll (empid, date, startday, endday, hoursworked, '; 
+queryString += 'grosspay, deductions, netpay) VALUES ';
+c = 0;
+for (r of arr4){
+   queryString += '('+r['empid']+',"'+r['date']+'","'+ r['startday']+'","';
+   queryString += r['endday']+'",'+r['hoursworked']+','+r['grosspay']+','+r['deductions'];
+   queryString += ','+r['netpay'] +')';
+   if (c == arr2.length-1){
+      queryString += ';';
+   }
+   else{
+      queryString += ',';
+   }
+   c++;
+}
+console.log('Query...'+queryString);
+connection.query(queryString, function(err, rows, fields) {
+    if (err) throw err;
+ 
+    for (var i in rows) {
+        console.log('Post Titles: ', rows[i]);
+    }
+});
+
+/*
+              new String[]{"Salary","salaryid", "INTEGER not NULL AUTO_INCREMENT", 
+			   "empid", "INTEGER", "hourlyrate", "DECIMAL(19,4)",
+			   "note" , "VARCHAR(255)"},
+*/
+
+var queryString = 'INSERT INTO Locks (empid, hourlyrate, '; 
+queryString += 'note) VALUES ';
+c = 0;
+for (r of arr5){
+   queryString += '('+r['empid']+','+r['hourlyrate']+',"';
+   queryString += r['note']+')';
+   if (c == arr2.length-1){
+      queryString += ';';
+   }
+   else{
+      queryString += ',';
+   }
+   c++;
+}
+console.log('Query...'+queryString);
+connection.query(queryString, function(err, rows, fields) {
+    if (err) throw err;
+ 
+    for (var i in rows) {
+        console.log('Post Titles: ', rows[i]);
+    }
+});
 connection.end();
