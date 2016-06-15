@@ -68,6 +68,8 @@ var ssn = require('ssn');
 var Chance = require('chance');
 var chance = new Chance();
 var count = 30;
+var empnumber = count;
+var maxJobids = 400;
 var i;
 var arr = [];
 for(i = 0; i < count; i++){
@@ -154,7 +156,7 @@ for(i = 0; i < count; i++){
    fDat['ssn'] = chance.ssn({dashes:false});
    fDat['deptid'] = chance.integer({min:1, max:40});
    fDat['typeid'] = chance.integer({min:1, max:200});
-   fDat['jobid'] = chance.integer({min:200, max:400});
+   fDat['jobid'] = chance.integer({min:1, max:maxJobids});
    fDat['catid'] = chance.integer({min:1001, max: 2002});
    arr.push(fDat);
 }
@@ -301,6 +303,39 @@ for (r in empSalaryDat){
    fDat['hourlyrate'] = empDat['hourlyrate'];
    fDat['note'] = "";
    arr5.push(fDat);
+}
+
+/*
+	      new String[]{"Jobtitle", "jobid", "INTEGER not NULL", 
+                           "jobtitle", "VARCHAR(255)", "jobdesc", "VARCHAR(255)"}, 
+*/
+arr6 = [];
+for (i = 1; i < maxJobids; i++){
+   fDat = {};
+   fDat['jobtitle'] = faker.lorem.word();
+   fDat['jobdesc'] = faker.lorem.words();
+   fDat['jobid'] = i;
+   arr6.push(fDat);
+}
+
+/*
+	      new String[]{"Emppicture", "picid", "INTEGER not NULL", "linkid", 
+			   "INTEGER", "type", "VARCHAR(10)", "filename", 
+			   "VARCHAR(255)", "filesize", "INTEGER", 
+			   "picture", "VARCHAR(255)"},
+*/
+arr7 = [];
+var emps = chance.unique(chance.integer, empnumber);
+var lemps = chance.unique(chance.integer, empnumber);
+var imagetypes = new Set(["JPEG", "GIF", "PNG", "TIFF", "BMP"]);
+for (empID in empSalaryDat){
+   fDat = {};
+   fDat['picid'] = emps[empID];
+   fDat['linkid'] = lemps[empID];
+   fDat['type'] = "JPEG";
+   fDat['filesize'] = 4291;
+   fDat['picture'] = faker.image.avatar();
+   arr7.push(fDat);
 }
 console.log(arr);
  
@@ -468,4 +503,38 @@ connection.query(queryString, function(err, rows, fields) {
         console.log('Post Titles: ', rows[i]);
     }
 });
+
+/*
+	      new String[]{"Jobtitle", "jobid", "INTEGER not NULL", 
+                           "jobtitle", "VARCHAR(255)", "jobdesc", "VARCHAR(255)"}, 
+*/
+var queryString = 'INSERT INTO Locks (jobid, jobtitle, jobdesc '; 
+queryString += ') VALUES ';
+c = 0;
+for (r of arr6){
+   queryString += '('+r['jobid']+',"'+r['jobtitle']+'","';
+   queryString += r['jobdesc']+'")';
+   if (c == arr2.length-1){
+      queryString += ';';
+   }
+   else{
+      queryString += ',';
+   }
+   c++;
+}
+console.log('Query...'+queryString);
+connection.query(queryString, function(err, rows, fields) {
+    if (err) throw err;
+ 
+    for (var i in rows) {
+        console.log('Post Titles: ', rows[i]);
+    }
+});
+
+/*
+	      new String[]{"Emppicture", "picid", "INTEGER not NULL", "linkid", 
+			   "INTEGER", "type", "VARCHAR(10)", "filename", 
+			   "VARCHAR(255)", "filesize", "INTEGER", 
+			   "picture", "VARCHAR(255)"},
+*/
 connection.end();
