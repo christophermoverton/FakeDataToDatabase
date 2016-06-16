@@ -335,8 +335,141 @@ for (empID in empSalaryDat){
    fDat['type'] = "JPEG";
    fDat['filesize'] = 4291;
    fDat['picture'] = faker.image.avatar();
+   fDat['filename'] = faker.lorem.words();
    arr7.push(fDat);
 }
+
+/*
+	      new String[]{"EmpCategory", "empid", "INTEGER", "catname", 
+			   "VARCHAR(255)", "catdesc", "VARCHAR(255)", 
+			   "miscnote", "VARCHAR(255)"},
+*/
+arr8 = [];
+var categories = new Set();
+var catdesc = [];
+for (i = 0; i<8; i++){
+   categories.add(faker.lorem.word());
+   catdesc.push(faker.lorem.words());
+}
+categories = Array.from(categories);
+for(empID in empSalaryDat){
+   fDat = {};
+   fDat['empid'] = empID;
+   var id = chance.integer({min:1, max: categories.size});
+   fDat['catname'] = categories[id];
+   fDat['catdesc'] = catdesc[id];
+   fDat['miscnote'] = "";
+   arr8.push(fDat);
+}
+
+/*
+              new String[]{"EmployeeType", "typeid", "INTEGER", "typename", 
+			   "VARCHAR(255)", "typedesc", "VARCHAR(255)",
+			   "miscnote", "VARCHAR(255)"},
+*/
+
+arr9 = [];
+etypes ={executive:.03, middlemanager: .03, frontlinemanager: .2, 
+         regular: .74};
+etypesarr = ['executive', 'middlemanager', 'frontlinemanager', 'regular'];
+i = 0;
+for (etype in etypesarr){
+   fDat = {};
+   fDat['typeid'] = i;
+   fDat['typename'] = etype;
+   fDat['typedesc'] = "";
+   fDat['miscnote'] = "";
+   arr9.push(fDat);
+   i++;
+}
+/*
+new String[]{"IpTable","ipid", "INTEGER AUTO_INCREMENT", "type", 
+			   "VARCHAR(20)", "linkid", "INTEGER", "ipaddress", 
+			   "VARCHAR(255)", "note", "VARCHAR(255)"},
+*/
+
+arr10 = [];
+iptabletypes = ["OUTPUT ACCEPT", "FORWARD ACCEPT",
+                "INPUT DROP", "OUTPUT DROP", "FORWARD DROP"];
+i=0;
+while(i < empnumber){
+   fDat = {};
+   fDat['type'] = (chance.normal()>.96)?"INPUT ACCEPT":iptabletypes[chance.integer({min:0, max:4})];
+   fDat['linkid'] = i+1;
+   fDat['ipaddress'] = faker.internet.ip();
+   fDat['note'] = "";
+   arr10.push(fDat);
+   i++;
+}
+/*
+              new String[]{"Department", "deptid", "INTEGER", "managerid", 
+			   "INTEGER", "deptparentid", "INTEGER", "deptname",
+			   "VARCHAR(255)", "location", "VARCHAR(255)",
+			   "deptdesc", "VARCHAR(255)", "mandaworkdesc", 
+			   "VARCHAR(255)", "messaging", "VARCHAR(255)"},
+*/
+
+arr11 = [];
+i=0;
+var empdeptdensity = chance.floating({min:.05, max: .10});
+var deptnums = empnumber*empdeptdensity;
+var treelevels = chance.integer({min:1, max:9});
+var cent = 1.0;
+var levels = [];
+for (i = 0; i < treelevels; i++){
+  if (i==0){
+    levels[0] = cent*chance.floating({min:.6, max:.85});
+    cent -= levels[0];
+  }
+  else{
+    levels[i] = cent*chance.floating({min:.3, max:.65});
+    cent -= levels[i];
+  }
+}
+var tlevels = [];
+var tlevels2 = [];
+var tlevels3 = [];
+for (i=0; i<treelevels; i++){
+   tlevels.push(levels[i]*deptnums);
+   tlevels2.push(levels[i]*deptnums);
+   if (i > 0){
+      tlevels[i] += tlevels[i-1];
+      tlevels3.push(tlevels2[i-1]/tlevels2[i]); 
+   }
+}
+
+var pruferseq = [];
+i=0;
+var j = 0;
+var modv = Math.floor(tlevels3[0]);
+var sval = Math.floor(tlevels[0]);
+var mink=0
+var k;
+
+while(i<deptnums){
+  if (i<tlevels[j]-1){
+     if (j>=(tlevels3.length-1)){
+        continue;
+     }
+     k = i-mink;
+     if (k%modv==0 && k!=0){
+        sval += 1;
+     }
+  }
+  else{
+     j++;
+     sval = Math.floor(tlevels[j]);
+     if (j>=tlevels3.length-1){
+        sval = 0;
+     }
+     modv = Math.floor(tlevels3[j]);
+     mink = Math.floor(tlevels3[j-1]);
+     
+  }
+  pruferseq.push(sval);
+  i++;
+}
+
 console.log(arr);
  
 var connection = mysql.createConnection(
@@ -426,7 +559,7 @@ c = 0;
 for (r of arr3){
    queryString += '('+r['empid']+',"'+r['datelock']+'","';
    queryString += r['reasonlock']+'",'+r['active']+')';
-   if (c == arr2.length-1){
+   if (c == arr3.length-1){
       queryString += ';';
    }
    else{
@@ -458,7 +591,7 @@ for (r of arr4){
    queryString += '('+r['empid']+',"'+r['date']+'","'+ r['startday']+'","';
    queryString += r['endday']+'",'+r['hoursworked']+','+r['grosspay']+','+r['deductions'];
    queryString += ','+r['netpay'] +')';
-   if (c == arr2.length-1){
+   if (c == arr4.length-1){
       queryString += ';';
    }
    else{
@@ -487,7 +620,7 @@ c = 0;
 for (r of arr5){
    queryString += '('+r['empid']+','+r['hourlyrate']+',"';
    queryString += r['note']+')';
-   if (c == arr2.length-1){
+   if (c == arr5.length-1){
       queryString += ';';
    }
    else{
@@ -514,7 +647,7 @@ c = 0;
 for (r of arr6){
    queryString += '('+r['jobid']+',"'+r['jobtitle']+'","';
    queryString += r['jobdesc']+'")';
-   if (c == arr2.length-1){
+   if (c == arr6.length-1){
       queryString += ';';
    }
    else{
@@ -537,4 +670,114 @@ connection.query(queryString, function(err, rows, fields) {
 			   "VARCHAR(255)", "filesize", "INTEGER", 
 			   "picture", "VARCHAR(255)"},
 */
+
+var queryString = 'INSERT INTO Emppicture (picid, linkid, type, '; 
+queryString += 'filename, filesize, picture) VALUES ';
+c = 0;
+for (r of arr7){
+   queryString += '('+r['picid']+','+r['linkid']+',"';
+   queryString += r['type']+'","'+r['filename']+'",'+r['filesize'];
+   queryString += ',"'+r['picture']+")';
+   if (c == arr7.length-1){
+      queryString += ';';
+   }
+   else{
+      queryString += ',';
+   }
+   c++;
+}
+console.log('Query...'+queryString);
+connection.query(queryString, function(err, rows, fields) {
+    if (err) throw err;
+ 
+    for (var i in rows) {
+        console.log('Post Titles: ', rows[i]);
+    }
+});
+
+/*
+	      new String[]{"EmpCategory", "empid", "INTEGER", "catname", 
+			   "VARCHAR(255)", "catdesc", "VARCHAR(255)", 
+			   "miscnote", "VARCHAR(255)"},
+*/
+
+var queryString = 'INSERT INTO EmpCategory (empid, catname, catdesc, '; 
+queryString += 'miscnote) VALUES ';
+c = 0;
+for (r of arr8){
+   queryString += '('+r['empid']+',"'+r['catname']+'","';
+   queryString += r['catdesc']+'","'+r['misnote']+'")';
+   if (c == arr8.length-1){
+      queryString += ';';
+   }
+   else{
+      queryString += ',';
+   }
+   c++;
+}
+console.log('Query...'+queryString);
+connection.query(queryString, function(err, rows, fields) {
+    if (err) throw err;
+ 
+    for (var i in rows) {
+        console.log('Post Titles: ', rows[i]);
+    }
+});
+
+/*
+              new String[]{"EmployeeType", "typeid", "INTEGER", "typename", 
+			   "VARCHAR(255)", "typedesc", "VARCHAR(255)",
+			   "miscnote", "VARCHAR(255)"},
+*/
+var queryString = 'INSERT INTO EmployeeType (typeid, typename, typedesc, '; 
+queryString += 'miscnote) VALUES ';
+c = 0;
+for (r of arr9){
+   queryString += '('+r['typeid']+',"'+r['typename']+'","';
+   queryString += r['typedesc']+'","'+r['misnote']+'")';
+   if (c == arr9.length-1){
+      queryString += ';';
+   }
+   else{
+      queryString += ',';
+   }
+   c++;
+}
+console.log('Query...'+queryString);
+connection.query(queryString, function(err, rows, fields) {
+    if (err) throw err;
+ 
+    for (var i in rows) {
+        console.log('Post Titles: ', rows[i]);
+    }
+});
+
+/*
+new String[]{"IpTable","ipid", "INTEGER AUTO_INCREMENT", "type", 
+			   "VARCHAR(20)", "linkid", "INTEGER", "ipaddress", 
+			   "VARCHAR(255)", "note", "VARCHAR(255)"},
+*/
+
+var queryString = 'INSERT INTO IpTable (type, linkid, ipaddress, '; 
+queryString += 'note) VALUES ';
+c = 0;
+for (r of arr10){
+   queryString += '("'+r['type']+'",'+r['linkid']+',"';
+   queryString += r['ipaddress']+'","'+r['note']+'")';
+   if (c == arr10.length-1){
+      queryString += ';';
+   }
+   else{
+      queryString += ',';
+   }
+   c++;
+}
+console.log('Query...'+queryString);
+connection.query(queryString, function(err, rows, fields) {
+    if (err) throw err;
+ 
+    for (var i in rows) {
+        console.log('Post Titles: ', rows[i]);
+    }
+});
 connection.end();
