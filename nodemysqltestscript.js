@@ -412,8 +412,8 @@ while(i < empnumber){
 arr11 = [];
 i=0;
 var empdeptdensity = chance.floating({min:.05, max: .10});
-var deptnums = empnumber*empdeptdensity;
-var treelevels = chance.integer({min:1, max:9});
+var deptnums = Math.round(empnumber*empdeptdensity);
+var treelevels = chance.integer({min:2, max:9});
 var cent = 1.0;
 var levels = [];
 for (i = 0; i < treelevels; i++){
@@ -430,11 +430,12 @@ var tlevels = [];
 var tlevels2 = [];
 var tlevels3 = [];
 for (i=0; i<treelevels; i++){
-   tlevels.push(levels[i]*deptnums);
-   tlevels2.push(levels[i]*deptnums);
+   tlevels.push(Math.round(levels[i]*deptnums));
+   tlevels2.push(Math.round(levels[i]*deptnums));
+   if (tlevels2[i]==0.0){tlevels2[i]=1; tlevels[i]=1;}
    if (i > 0){
       tlevels[i] += tlevels[i-1];
-      tlevels3.push(tlevels2[i-1]/tlevels2[i]); 
+      tlevels3.push(Math.floor(tlevels2[i-1]/tlevels2[i])); 
    }
 }
 
@@ -445,10 +446,17 @@ var modv = Math.floor(tlevels3[0]);
 var sval = Math.floor(tlevels[0]);
 var mink=0
 var k;
-
+/*
+console.log(deptnums);
+console.log(treelevels);
+console.log(tlevels);
+console.log(tlevels2);
+console.log(tlevels3);
+*/
 while(i<deptnums){
   if (i<tlevels[j]-1){
      if (j>=(tlevels3.length-1)){
+        i++;
         continue;
      }
      k = i-mink;
@@ -469,7 +477,25 @@ while(i<deptnums){
   pruferseq.push(sval);
   i++;
 }
-
+console.log(pruferseq);
+i = 0;
+eSet = new Set();
+for(v of pruferseq){
+   var check = false;
+   while(!check){
+      var eID = chance.integer({min:1, max:empnumber});
+      if (!eSet.has(eID)){eSet.add(eID); break;}
+   }
+}
+eSet = Array.from(eSet);
+for (eID of eSet){
+   fDat = {};
+   fDat['deptid'] = i+1;
+   fDat['deptparentid'] = pruferseq[i];
+   fDat['managerid'] = eSet[pruferseq[i]];
+   fDat['deptname'] = faker.lorem.word();
+   i++;
+}
 console.log(arr);
  
 var connection = mysql.createConnection(
