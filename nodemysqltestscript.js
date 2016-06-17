@@ -43,6 +43,10 @@ function revDate(datestr){
   return bdstr;
 }
 
+function sqltime(datestr){
+   return datestr.toTimeString().split(" ")[0];
+}
+
 function timeDiff(time1, time2){
    var one_day=1000*60*60*24;
    var time1_ms = time1.getTime();
@@ -453,6 +457,7 @@ console.log(tlevels);
 console.log(tlevels2);
 console.log(tlevels3);
 */
+var deptmax = 0;
 while(i<deptnums){
   if (i<tlevels[j]-1){
      if (j>=(tlevels3.length-1)){
@@ -462,6 +467,7 @@ while(i<deptnums){
      k = i-mink;
      if (k%modv==0 && k!=0){
         sval += 1;
+        if(sval != 0){deptmax = sval;}
      }
   }
   else{
@@ -494,8 +500,54 @@ for (eID of eSet){
    fDat['deptparentid'] = pruferseq[i];
    fDat['managerid'] = eSet[pruferseq[i]];
    fDat['deptname'] = faker.lorem.word();
+   fDat['location'] = faker.lorem.word();
+   fDat['deptdesc'] = faker.lorem.words();
+   fDat['mandaworkdesc'] = faker.lorem.words();
+   fDat['messaging'] = "";
+   arr11.push(fDat);
    i++;
 }
+
+/*
+	      new String[]{"DeptEvents", "eventid", "INTEGER AUTO_INCREMENT", 
+                           "deptid", "INTEGER", 
+                           "eventdate", "DATE", "eventtime", 
+			   "TIME", "eventbody", "VARCHAR(255)", "postedby", 
+			   "VARCHAR(255)", "dateposted", "DATE", "expirydate", 
+			   "DATE", "active", "BOOLEAN"},
+*/
+
+var events = chance.integer({min:1, max:200});
+var eDeptIDs = [];
+i=0;
+var arr12 = [];
+while(i<events){
+   fDat = {};
+   
+   var edid = chance.integer({min:1, max: deptnums});
+   fDat['deptid'] = edid;
+   //if (!eDeptIDs.has(edid)){eDeptIDs.add(edid); i++;}
+   eDeptIDs.push(edid);
+   var eyear = chance.year({min:1970, max: 2016});
+   var edate = chance.date({year:year});
+   
+   var etime = sqltime(edate);
+   var edate2 = revDate(edate);
+   fDat['eventdate'] = edate2;
+   fDat['eventtime'] = etime;
+   fDat['eventbody'] = faker.lorem.word();
+   fDat['postedby'] = faker.lorem.word();
+   var edate3 = new Date(edate).setDate(edate.getDate()-chance.integer({min:1, max:5}));
+   var edate4 = revDate(edate3);
+   fDat['dateposted'] = edate4;
+   var edate5 = new Date(edate).setDate(edate.getDate()+chance.integer({min:1, max:5}));
+   fDat['expirydate'] = revDate(edate5);
+   fDat['active'] = 'FALSE';
+   arr12.push(fDat);
+   i++;
+}
+
+//eDeptIDs = Array.from(eDeptIDs);
 console.log(arr);
  
 var connection = mysql.createConnection(
@@ -791,6 +843,71 @@ for (r of arr10){
    queryString += '("'+r['type']+'",'+r['linkid']+',"';
    queryString += r['ipaddress']+'","'+r['note']+'")';
    if (c == arr10.length-1){
+      queryString += ';';
+   }
+   else{
+      queryString += ',';
+   }
+   c++;
+}
+console.log('Query...'+queryString);
+connection.query(queryString, function(err, rows, fields) {
+    if (err) throw err;
+ 
+    for (var i in rows) {
+        console.log('Post Titles: ', rows[i]);
+    }
+});
+
+/*
+              new String[]{"Department", "deptid", "INTEGER", "managerid", 
+			   "INTEGER", "deptparentid", "INTEGER", "deptname",
+			   "VARCHAR(255)", "location", "VARCHAR(255)",
+			   "deptdesc", "VARCHAR(255)", "mandaworkdesc", 
+			   "VARCHAR(255)", "messaging", "VARCHAR(255)"},
+*/
+
+var queryString = 'INSERT INTO Department (deptid, managerid, deptparentid, '; 
+queryString += 'deptname, location, deptdesc, mandaworkdesc, messaging) VALUES ';
+c = 0;
+for (r of arr11){
+   queryString += '('+r['deptid']+','+r['managerid']+','+r['deptparentid']+',"';
+   queryString += r['deptname']+'","'+r['location']+'","'+r['deptdesc']+'","';
+   queryString += r['mandaworkdesc']+'","'+r['messaging'] + '")';
+   if (c == arr11.length-1){
+      queryString += ';';
+   }
+   else{
+      queryString += ',';
+   }
+   c++;
+}
+console.log('Query...'+queryString);
+connection.query(queryString, function(err, rows, fields) {
+    if (err) throw err;
+ 
+    for (var i in rows) {
+        console.log('Post Titles: ', rows[i]);
+    }
+});
+
+/*
+	      new String[]{"DeptEvents", "eventid", "INTEGER AUTO_INCREMENT", 
+                           "deptid", "INTEGER", 
+                           "eventdate", "DATE", "eventtime", 
+			   "TIME", "eventbody", "VARCHAR(255)", "postedby", 
+			   "VARCHAR(255)", "dateposted", "DATE", "expirydate", 
+			   "DATE", "active", "BOOLEAN"},
+*/
+
+var queryString = 'INSERT INTO DeptEvents (deptid, eventdate, eventtime, '; 
+queryString += 'eventbody, postedby, dateposted, expirydate, active) VALUES ';
+c = 0;
+for (r of arr12){
+   queryString += '('+r['deptid']+',"'+r['eventdate']+'","'+r['eventtime']+'","';
+   queryString += r['eventbody']+'","'+r['postedby']+'","'+r['dateposted']+'","';
+   queryString += r['expirydate']+'",'+r['active'] + ')';
+   if (c == arr12.length-1){
       queryString += ';';
    }
    else{
