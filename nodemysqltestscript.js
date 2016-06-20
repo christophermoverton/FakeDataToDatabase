@@ -47,6 +47,13 @@ function sqltime(datestr){
    return datestr.toTimeString().split(" ")[0];
 }
 
+function sqldatetime(datestr){
+   //'2008-01-01 00:00:01'
+   var cdate = revDate(datestr);
+   var timestr = sqltime(datestr);
+   return cdate + " " + timestr;
+}
+
 function timeDiff(time1, time2){
    var one_day=1000*60*60*24;
    var time1_ms = time1.getTime();
@@ -54,6 +61,23 @@ function timeDiff(time1, time2){
    var difference_ms = time1_ms - time2_ms;
    var age = Math.round(Math.round(difference_ms/one_day)/365.25);
    return age;
+}
+
+function timeDiff2(time1, time2){
+   var one_day=1000*60*60*24;
+   var time1_ms = time1.getTime();
+   var time2_ms = time2.getTime();
+   var difference_ms = time1_ms - time2_ms;
+   var age = Math.round(Math.round(difference_ms/one_day));
+   return age;
+}
+
+function timeDiff3(time1, time2){
+   var time1_ms = time1.getTime();
+   var time2_ms = time2.getTime();
+   var difference_ms = time1_ms - time2_ms;
+   //var age = Math.round(Math.round(difference_ms/one_day));
+   return difference_ms;
 }
 
 function boolval(boolv){
@@ -529,7 +553,7 @@ while(i<events){
    //if (!eDeptIDs.has(edid)){eDeptIDs.add(edid); i++;}
    eDeptIDs.push(edid);
    var eyear = chance.year({min:1970, max: 2016});
-   var edate = chance.date({year:year});
+   var edate = chance.date({year:eyear});
    
    var etime = sqltime(edate);
    var edate2 = revDate(edate);
@@ -547,7 +571,125 @@ while(i<events){
    i++;
 }
 
+/*
+              new String[]{"Bonus", "bonusid", "INTEGER AUTO_INCREMENT",
+                           "empid", "INTEGER", 
+			   "datebonus", "DATE", "bonuspayment", "DECIMAL(19,4)",
+			   "note", "VARCHAR(255)"}, 
+*/
+
+arr13 = [];
+var nBonus = chance.integer({min: 1, max:empnumber*6});
+i=0;
+while(i<nBonus){
+   fDat={};
+   var eid = = chance.integer({min:1, max: empnumber});
+   fDat['empid'] = eid;
+   var minYear = arr[eid]['datesignup2'].getYear();
+   var byear = chance.year({min:minYear, max: 2016});
+   var bdate = chance.date({year:byear});
+   fDat['datebonus2'] = bdate;
+   fDat['datebonus'] = revDate(bdate);
+   var bpmt = chance.floating({min: 300.00, max: 6000.00});
+   fDat['bonuspayment'] = bpmt;
+   fDat['note'] = "";
+   arr13.push(fDat);
+   i++;
+}
+
 //eDeptIDs = Array.from(eDeptIDs);
+/*
+	      new String[]{"Project","projectid", "INTEGER", "deptid", "INTEGER", 
+			   "projecttitle", "VARCHAR(255)", "projectdesc", 
+			   "VARCHAR(255)", "hoursworked", "FLOAT", "active", 
+			   "BOOLEAN"},
+*/
+arr14=[];
+var projectN = chance.integer({min:empnumber*.5, max:empnumber*3});
+i=0;
+while(i<projectN){
+   fDat={};
+   var deptId = chance.integer({min:1, max:deptnums});
+   fDat['projectid']=deptID;
+   fDat['deptid']=deptId;
+   fDat['projecttitle'] = faker.lorem.word();
+   fDat['projectdesc'] = faker.lorem.words();
+   fDat['hoursworked'] = chance.float({min:.1, max:1000});
+   fDat['active'] = "FALSE";
+   arr14.push(fDat);
+   i++;
+}
+
+/*
+	      new String[]{"Timesheet","timeid", "INTEGER AUTO_INCREMENT",
+                            "empid", "INTEGER",
+			   "projectid", "INTEGER", "checkin", 
+                           "TIMESTAMP DEFAULT '1970-01-01 00:00:01'", 
+			   "checkout", 
+                           "TIMESTAMP DEFAULT '1970-01-01 00:00:01'", 
+                           "rawtime", "FLOAT",
+			   "roundedtime", "DECIMAL(19,4)", "workdesc", 
+			   "VARCHAR(255)", "ipcheckin", 
+                           "TIMESTAMP DEFAULT '1970-01-01 00:00:01'", 
+			   "ipcheckout", 
+                           "TIMESTAMP DEFAULT '1970-01-01 00:00:01'", 
+                           "checked", "BOOLEAN"}, 
+                           sqldatetime(datestr)
+*/
+arr15=[];
+i=0;
+var k=0;
+while(i<empnumber){
+   fDat = {};
+   tsheet = [];
+   daysoffsheet=[];
+   var startdate = arr[i]['datesignup2'];
+   var yearsemp = timeDiff(new Date(), startdate);
+   var vacdays = 14*yearsemp;
+   var daysemp = timeDiff(new Date(), startdate);
+   var j=0;
+   
+   var daysoff = new Set();
+   var pDate = new Date(startdate);
+   while (daysoff.size < 2){
+      daysoff.add(chance.integer({min:0, max:6}));
+   }
+   var starthour = chance.integer({min:5, max:13});
+   pDate.setHours(starthour);
+   while(j < daysemp){
+      fDat = {};
+      if (k%7 == 0 && k !=0){
+         k++;
+      }
+      if (daysoff.has(j%7)){
+         j++; 
+         continue;
+      }
+      if (chance.normal()<.04 && vacdays > 0){
+         daysoffsheet.push(pDate);
+         vacdays--;
+         j++;
+         continue;
+      }
+
+      fDat['checkin'] = sqldatetime(pDate);
+      var pDate2 = new Date(pDate);
+      pDate2.setMinutes(pDate2.getMinutes() + chance.integer({min:1, min:10}));
+      fDat['ipcheckin'] = sqldatetime(pDate2);
+      var pDate3 = new Date(pDate);
+      pDate3.setHours(pDate2.getHours()+8);
+      fDat['checkout'] = sqldatetime(pDate3);
+      var pDate4 = new Date(pDate3);
+      pDate4.setMinutes(pDate4.getMinutes() - chance.integer({min:1, min:5}));
+      fDat['ipcheckout'] = sqldatetime(pDate4);
+      pDate.setDate(pDate.getDate()+1);
+      fDat['rawtime'] = timediff3(pDate3,pDate2);
+      fDat['roundedtime'] = fDat['rawtime'];
+      fDat['projectid'] = k;
+      j++;
+   }
+   i++;
+}
 console.log(arr);
  
 var connection = mysql.createConnection(
@@ -908,6 +1050,66 @@ for (r of arr12){
    queryString += r['eventbody']+'","'+r['postedby']+'","'+r['dateposted']+'","';
    queryString += r['expirydate']+'",'+r['active'] + ')';
    if (c == arr12.length-1){
+      queryString += ';';
+   }
+   else{
+      queryString += ',';
+   }
+   c++;
+}
+console.log('Query...'+queryString);
+connection.query(queryString, function(err, rows, fields) {
+    if (err) throw err;
+ 
+    for (var i in rows) {
+        console.log('Post Titles: ', rows[i]);
+    }
+});
+
+/*
+              new String[]{"Bonus", "bonusid", "INTEGER AUTO_INCREMENT",
+                           "empid", "INTEGER", 
+			   "datebonus", "DATE", "bonuspayment", "DECIMAL(19,4)",
+			   "note", "VARCHAR(255)"}, 
+*/
+
+var queryString = 'INSERT INTO Bonus (empid, datebonus, bonuspayment, '; 
+queryString += 'note) VALUES ';
+c = 0;
+for (r of arr13){
+   queryString += '('+r['empid']+',"'+r['datebonus']+'",'+r['bonuspayment']+',"';
+   queryString += r['note']+'")';
+   if (c == arr13.length-1){
+      queryString += ';';
+   }
+   else{
+      queryString += ',';
+   }
+   c++;
+}
+console.log('Query...'+queryString);
+connection.query(queryString, function(err, rows, fields) {
+    if (err) throw err;
+ 
+    for (var i in rows) {
+        console.log('Post Titles: ', rows[i]);
+    }
+});
+
+/*
+	      new String[]{"Project","projectid", "INTEGER", "deptid", "INTEGER", 
+			   "projecttitle", "VARCHAR(255)", "projectdesc", 
+			   "VARCHAR(255)", "hoursworked", "FLOAT", "active", 
+			   "BOOLEAN"},
+*/
+
+var queryString = 'INSERT INTO Project (projectid, deptid, projecttitle, '; 
+queryString += 'projectdesc, hoursworked, active) VALUES ';
+c = 0;
+for (r of arr14){
+   queryString += '('+r['projectid']+','+r['deptid']+',"'+r['projecttitle']+'","';
+   queryString += r['projectdesc']+'",'+r['hoursworked']+','+r['active']+')';
+   if (c == arr14.length-1){
       queryString += ';';
    }
    else{
