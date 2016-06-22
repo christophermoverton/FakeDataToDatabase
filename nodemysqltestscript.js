@@ -243,7 +243,7 @@ for(i = 0; i<arr.length; i++){
       var fulltime2 = false;
    }
    
-   var hourlypay = chance.float({min: 12.0000, max: 30.0000});
+   var hourlypay = chance.floating({min: 12.0000, max: 30.0000});
    empSalaryDat[i] = {fulltime: fulltime, fulltime2: fulltime2, 
                             hourlypay: hourlypay};
    for (j = 0; j<payrolllocks; j++){
@@ -293,22 +293,22 @@ for (r in arr3){
    var endday = new Date(r['datelock']);
    endday.setDate(endday.getDate()-1);
    fDat['date'] = new Date(r['datelock']);
-   fDat['hourlypay'] = chance.float({min: 12.0000, max: 30.0000});
+   fDat['hourlypay'] = chance.floating({min: 12.0000, max: 30.0000});
    var hoursworked = 10.0;
    if (r['fulltime2']){
       hoursworked = 40.0;
       if (chance.normal() > .75){
-          hoursworked += chance.float({min: 0, max: 20});
+          hoursworked += chance.floating({min: 0, max: 20});
       }
    }
    else{
       hoursworked = 20.0;
-      hoursworked += chance.float({min: 0, max: 10});    
+      hoursworked += chance.floating({min: 0, max: 10});    
    }
    fDat['hoursworked'] = hoursworked;
    var grosspay = hoursworked*fDat['hourlypay'];
    var deduction = grosspay*.025;
-   var taxes = grosspay*.12;
+   var taxes = grosspay*.20;
    var netpay = grosspay - deduction -taxes;
    fDat['grosspay'] = grosspay;
    fDat['deductions'] = deduction;
@@ -561,10 +561,18 @@ while(i<events){
    fDat['eventtime'] = etime;
    fDat['eventbody'] = faker.lorem.word();
    fDat['postedby'] = faker.lorem.word();
-   var edate3 = new Date(edate).setDate(edate.getDate()-chance.integer({min:1, max:5}));
+   console.log(new Date(edate));
+   console.log(edate.getDate());
+   var n3 = edate.getDate()-chance.integer({min:1, max:5});
+   console.log(n3);
+   var edate3 = new Date(edate);
+   edate3.setDate(n3);
+   console.log(edate3);
    var edate4 = revDate(edate3);
    fDat['dateposted'] = edate4;
-   var edate5 = new Date(edate).setDate(edate.getDate()+chance.integer({min:1, max:5}));
+   var n4 = edate.getDate()+chance.integer({min:1, max:5});
+   var edate5 = new Date(edate);
+   edate5.setDate(n4);
    fDat['expirydate'] = revDate(edate5);
    fDat['active'] = 'FALSE';
    arr12.push(fDat);
@@ -583,8 +591,10 @@ var nBonus = chance.integer({min: 1, max:empnumber*6});
 i=0;
 while(i<nBonus){
    fDat={};
-   var eid = = chance.integer({min:1, max: empnumber});
+   var eid = chance.integer({min:1, max: empnumber-1});
    fDat['empid'] = eid;
+   //console.log(arr[eid]);
+   //console.log(eid);
    var minYear = arr[eid]['datesignup2'].getYear();
    var byear = chance.year({min:minYear, max: 2016});
    var bdate = chance.date({year:byear});
@@ -610,11 +620,11 @@ i=0;
 while(i<projectN){
    fDat={};
    var deptId = chance.integer({min:1, max:deptnums});
-   fDat['projectid']=deptID;
+   fDat['projectid']=deptId;
    fDat['deptid']=deptId;
    fDat['projecttitle'] = faker.lorem.word();
    fDat['projectdesc'] = faker.lorem.words();
-   fDat['hoursworked'] = chance.float({min:.1, max:1000});
+   fDat['hoursworked'] = chance.floating({min:.1, max:1000});
    fDat['active'] = "FALSE";
    arr14.push(fDat);
    i++;
@@ -683,13 +693,63 @@ while(i<empnumber){
       pDate4.setMinutes(pDate4.getMinutes() - chance.integer({min:1, min:5}));
       fDat['ipcheckout'] = sqldatetime(pDate4);
       pDate.setDate(pDate.getDate()+1);
-      fDat['rawtime'] = timediff3(pDate3,pDate2);
+      fDat['rawtime'] = timeDiff3(pDate3,pDate2);
       fDat['roundedtime'] = fDat['rawtime'];
       fDat['projectid'] = k;
+      fDat['empid'] = i;
+      fDat['checked'] = 'TRUE';
+      arr15.push(fDat);
       j++;
    }
    i++;
 }
+
+/*
+	      new String[]{"Hourly","hourid", "INTEGER AUTO_INCREMENT", "empid", 
+                           "INTEGER",
+			   "hourlyrate", "DECIMAL(19,4)", "note", "VARCHAR(255)"},
+*/
+arr16=[];
+i=0;
+var k=0;
+while(i<empnumber){
+   fDat = {};
+   fDat['empid'] = i;
+   fDat['hourlyrate'] = arr4[i]['hourlypay'];
+   fDat['note'] = "";
+   arr16.push(fDat);
+   i++;
+}
+
+/*
+              new String[]{"Deductions","deducid", "INTEGER AUTO_INCREMENT", 
+                            "empid", "INTEGER", 
+			   "deductype", "VARCHAR(50)", "amount", "DECIMAL(19,4)",
+			   "note", "VARCHAR(255)"},
+*/
+
+arr17=[];
+i=0;
+var k=0;
+while(i<empnumber){
+   fDat = {};
+   var deductiontotal = arr4[i]['deductions'] + arr4[i]['taxes'];
+   var deductions = {fed: .15, ssn: .062, med: .0145, state: .0735}
+   fDat['empid'] = i;
+   fDat['note'] = "";
+   for(var deduct in deductions){
+      fDat['deductype'] = deduct;
+      fDat['amount'] = deductions[deduct];
+      arr17.push(fDat);
+   }
+   i++;
+}
+
+/*
+	      new String[]{"Holidays", "holid", "INTEGER", "empid", "INTEGER",
+			   "datehols", "DATE", "payment", "DECIMAL(19,4)"}, */
+
+
 console.log(arr);
  
 var connection = mysql.createConnection(
@@ -897,7 +957,7 @@ c = 0;
 for (r of arr7){
    queryString += '('+r['picid']+','+r['linkid']+',"';
    queryString += r['type']+'","'+r['filename']+'",'+r['filesize'];
-   queryString += ',"'+r['picture']+")';
+   queryString += ',"'+r['picture']+'")';
    if (c == arr7.length-1){
       queryString += ';';
    }
@@ -1110,6 +1170,104 @@ for (r of arr14){
    queryString += '('+r['projectid']+','+r['deptid']+',"'+r['projecttitle']+'","';
    queryString += r['projectdesc']+'",'+r['hoursworked']+','+r['active']+')';
    if (c == arr14.length-1){
+      queryString += ';';
+   }
+   else{
+      queryString += ',';
+   }
+   c++;
+}
+console.log('Query...'+queryString);
+connection.query(queryString, function(err, rows, fields) {
+    if (err) throw err;
+ 
+    for (var i in rows) {
+        console.log('Post Titles: ', rows[i]);
+    }
+});
+
+/*
+	      new String[]{"Timesheet","timeid", "INTEGER AUTO_INCREMENT",
+                            "empid", "INTEGER",
+			   "projectid", "INTEGER", "checkin", 
+                           "TIMESTAMP DEFAULT '1970-01-01 00:00:01'", 
+			   "checkout", 
+                           "TIMESTAMP DEFAULT '1970-01-01 00:00:01'", 
+                           "rawtime", "FLOAT",
+			   "roundedtime", "DECIMAL(19,4)", "workdesc", 
+			   "VARCHAR(255)", "ipcheckin", 
+                           "TIMESTAMP DEFAULT '1970-01-01 00:00:01'", 
+			   "ipcheckout", 
+                           "TIMESTAMP DEFAULT '1970-01-01 00:00:01'", 
+                           "checked", "BOOLEAN"}, 
+                           sqldatetime(datestr)
+*/
+
+var queryString = 'INSERT INTO Timesheet (empid, projectid, checkin, '; 
+queryString += 'checkout, rawtime, roundedtime, workdesc, ipcheckin, ';
+queryString += 'ipcheckout, checked) VALUES ';
+c = 0;
+for (r of arr15){
+   queryString += '('+r['empid']+','+r['projectid']+',"'+r['checkin']+'","';
+   queryString += r['checkout']+'",'+r['rawtime']+','+r['roundedtime'];
+   queryString += ',"'+r['workdesc']+'","'+r['ipcheckin']+'","'+r['ipcheckout'];
+   queryString += '",'+r['checked']+')';
+   if (c == arr15.length-1){
+      queryString += ';';
+   }
+   else{
+      queryString += ',';
+   }
+   c++;
+}
+console.log('Query...'+queryString);
+connection.query(queryString, function(err, rows, fields) {
+    if (err) throw err;
+ 
+    for (var i in rows) {
+        console.log('Post Titles: ', rows[i]);
+    }
+});
+
+/*
+	      new String[]{"Hourly","hourid", "INTEGER AUTO_INCREMENT", "empid", 
+                           "INTEGER",
+			   "hourlyrate", "DECIMAL(19,4)", "note", "VARCHAR(255)"},
+*/
+
+var queryString = 'INSERT INTO Hourly (empid, hourlyrate, note) VALUES ';
+c = 0;
+for (r of arr16){
+   queryString += '('+r['empid']+','+r['hourlyrate']+',"'+r['note']+')';
+   if (c == arr16.length-1){
+      queryString += ';';
+   }
+   else{
+      queryString += ',';
+   }
+   c++;
+}
+console.log('Query...'+queryString);
+connection.query(queryString, function(err, rows, fields) {
+    if (err) throw err;
+ 
+    for (var i in rows) {
+        console.log('Post Titles: ', rows[i]);
+    }
+});
+
+/*
+              new String[]{"Deductions","deducid", "INTEGER AUTO_INCREMENT", 
+                            "empid", "INTEGER", 
+			   "deductype", "VARCHAR(50)", "amount", "DECIMAL(19,4)",
+			   "note", "VARCHAR(255)"},
+*/
+
+var queryString = 'INSERT INTO Deductions (empid, deductype, amount, note) VALUES ';
+c = 0;
+for (r of arr17){
+   queryString += '('+r['empid']+',"'+r['deductype']+'","'+r['amount']+'","'+r['note']+'")';
+   if (c == arr17.length-1){
       queryString += ';';
    }
    else{
