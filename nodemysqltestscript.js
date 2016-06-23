@@ -547,19 +547,21 @@ while(i<deptnums){
 //console.log(pruferseq);
 i = 0;
 eSet = new Set();
+efDat = {};
 for(v of pruferseq){
+   if (efDat.hasOwnProperty(v)){continue;}
    var check = false;
    while(!check){
       var eID = chance.integer({min:1, max:empnumber});
-      if (!eSet.has(eID)){eSet.add(eID); break;}
+      if (!eSet.has(eID)){eSet.add(eID); efDat[v]=eID; break;}
    }
 }
 eSet = Array.from(eSet);
-for (eID of eSet){
+for (pID of pruferseq){
    fDat = {};
    fDat['deptid'] = i+1;
-   fDat['deptparentid'] = pruferseq[i];
-   fDat['managerid'] = eSet[pruferseq[i]];
+   fDat['deptparentid'] = pID;
+   fDat['managerid'] = efDat[pID];
    fDat['deptname'] = faker.lorem.word();
    fDat['location'] = faker.lorem.word();
    fDat['deptdesc'] = faker.lorem.words();
@@ -657,7 +659,8 @@ i=0;
 while(i<projectN){
    fDat={};
    var deptId = chance.integer({min:1, max:deptnums});
-   fDat['projectid']=deptId;
+   
+   fDat['projectid']=i;
    fDat['deptid']=deptId;
    fDat['projecttitle'] = faker.lorem.word();
    fDat['projectdesc'] = faker.lorem.words();
