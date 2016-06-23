@@ -136,7 +136,7 @@ for(i = 0; i < count; i++){
    var difference_ms = cday_ms - bday_ms;
    var age = Math.round(Math.round(difference_ms/one_day)/365.25);
    var diff18 = age-18.0;
-   console.log(diff18);
+   //console.log(diff18);
    var gender = chance.gender();
    if (gender == 'Female'){
       fDat['gender'] = 'F';
@@ -156,7 +156,7 @@ for(i = 0; i < count; i++){
       var year2 = chance.year({min: 2016-diff18, max:2016});
       startdate = chance.date({year: year2});      
    }
-   console.log(startdate);
+   //console.log(startdate);
    fDat['datesignup'] = revDate(startdate);
    fDat['datesignup2'] = startdate;
    var lastsignupdate = startdate2
@@ -234,8 +234,9 @@ for(i = 0; i<arr.length; i++){
    var startdate = arr[i]['datesignup2'];
    var startdate2 = new Date();
    var payrolllocks = 24.0*timeDiff(startdate2, startdate);
+   console.log("payrolllocks: " + payrolllocks);
    var j;
-   var datelock = startdate2;
+   var datelock = startdate;
    var fulltime = 'TRUE';
    var fulltime2 = true; 
    if (!chance.bool()){
@@ -252,6 +253,7 @@ for(i = 0; i<arr.length; i++){
       fDat['prevdatelock'] = datelock;
       fDat['fulltime'] = fulltime;
       fDat['fulltime2'] = fulltime2;
+      fDat['empid'] = i+1;
       if (j == 0){
          if (datelock.getDate() < 15){
             datelock.setDate(15);
@@ -271,6 +273,9 @@ for(i = 0; i<arr.length; i++){
          }
       }
       fDat['datelock'] = datelock;
+      
+      fDat['datelock2'] = revDate(datelock);
+      console.log("datelock: " + fDat.datelock2);
       fDat['reasonlock'] = chance.word({length:2});
       fDat['active'] = 'FALSE';
       arr3.push(fDat);
@@ -286,13 +291,22 @@ for(i = 0; i<arr.length; i++){
 */
 
 var arr4 = [];
-
-for (r in arr3){
+i=0;
+for (var r in arr3){
    fDat = {};
-   var startdate = r['prevdatelock'];
-   var endday = new Date(r['datelock']);
+   console.log("prevdatelock on recall: " + arr3[r]['prevdatelock']);
+   var startdate = new Date(arr3[r]['prevdatelock']);
+   var endday = new Date(arr3[r]['datelock']);
    endday.setDate(endday.getDate()-1);
-   fDat['date'] = new Date(r['datelock']);
+   fDat['startday'] = revDate(startdate);
+   fDat['endday'] = revDate(endday);
+   fDat['empid'] = i+1;
+   fDat['date'] = revDate(new Date(arr3[r]['datelock']));
+   console.log("startday(p): " + startdate);
+   console.log("endday(p): " + endday);
+   console.log("startday: " + fDat['startday']);
+   console.log("endday: " + fDat['endday']);
+   console.log("date: "+ fDat['date']);
    fDat['hourlypay'] = chance.floating({min: 12.0000, max: 30.0000});
    var hoursworked = 10.0;
    if (r['fulltime2']){
@@ -315,6 +329,7 @@ for (r in arr3){
    fDat['taxes'] = taxes;
    fDat['netpay'] = netpay;
    arr4.push(fDat);
+   i++;
 }
 
 /*
@@ -404,7 +419,7 @@ i = 0;
 for (etype in etypesarr){
    fDat = {};
    fDat['typeid'] = i;
-   fDat['typename'] = etype;
+   fDat['typename'] = etypesarr[etype];
    fDat['typedesc'] = "";
    fDat['miscnote'] = "";
    arr9.push(fDat);
@@ -507,7 +522,7 @@ while(i<deptnums){
   pruferseq.push(sval);
   i++;
 }
-console.log(pruferseq);
+//console.log(pruferseq);
 i = 0;
 eSet = new Set();
 for(v of pruferseq){
@@ -561,13 +576,13 @@ while(i<events){
    fDat['eventtime'] = etime;
    fDat['eventbody'] = faker.lorem.word();
    fDat['postedby'] = faker.lorem.word();
-   console.log(new Date(edate));
-   console.log(edate.getDate());
+   //console.log(new Date(edate));
+   //console.log(edate.getDate());
    var n3 = edate.getDate()-chance.integer({min:1, max:5});
-   console.log(n3);
+   //console.log(n3);
    var edate3 = new Date(edate);
    edate3.setDate(n3);
-   console.log(edate3);
+   //console.log(edate3);
    var edate4 = revDate(edate3);
    fDat['dateposted'] = edate4;
    var n4 = edate.getDate()+chance.integer({min:1, max:5});
@@ -684,13 +699,17 @@ while(i<empnumber){
 
       fDat['checkin'] = sqldatetime(pDate);
       var pDate2 = new Date(pDate);
-      pDate2.setMinutes(pDate2.getMinutes() + chance.integer({min:1, min:10}));
+      var t2 = pDate2.getMinutes() + chance.integer({min:1, max:10});
+      //console.log(t2);
+      pDate2.setMinutes(t2);
+      //console.log("ipcheckin date: "+pDate2);
       fDat['ipcheckin'] = sqldatetime(pDate2);
       var pDate3 = new Date(pDate);
       pDate3.setHours(pDate2.getHours()+8);
+      //console.log(pDate3);
       fDat['checkout'] = sqldatetime(pDate3);
       var pDate4 = new Date(pDate3);
-      pDate4.setMinutes(pDate4.getMinutes() - chance.integer({min:1, min:5}));
+      pDate4.setMinutes(pDate4.getMinutes() - chance.integer({min:1, max:5}));
       fDat['ipcheckout'] = sqldatetime(pDate4);
       pDate.setDate(pDate.getDate()+1);
       fDat['rawtime'] = timeDiff3(pDate3,pDate2);
@@ -732,12 +751,13 @@ arr17=[];
 i=0;
 var k=0;
 while(i<empnumber){
-   fDat = {};
+   
    var deductiontotal = arr4[i]['deductions'] + arr4[i]['taxes'];
-   var deductions = {fed: .15, ssn: .062, med: .0145, state: .0735}
-   fDat['empid'] = i;
-   fDat['note'] = "";
+   var deductions = {fed: .15, ssn: .062, med: .0145, state: .0735};
    for(var deduct in deductions){
+      fDat = {};
+      fDat['empid'] = i;
+      fDat['note'] = "";
       fDat['deductype'] = deduct;
       fDat['amount'] = deductions[deduct];
       arr17.push(fDat);
@@ -751,7 +771,7 @@ while(i<empnumber){
 
 
 console.log(arr);
- 
+
 var connection = mysql.createConnection(
     {
       host     : 'localhost',
@@ -760,9 +780,9 @@ var connection = mysql.createConnection(
       database : 'PayrollSystem',
     }
 );
- 
+
 connection.connect();
- 
+
 var queryString = 'INSERT INTO Employee (deptid, jobid, typeid, catid, lastname, '; 
 queryString += 'firstname, minit, address1, city, state, zipcode,';
 queryString += 'email, webpage, homephone, officephone, cellphone, regularhours,';
@@ -837,7 +857,7 @@ var queryString = 'INSERT INTO Locks (empid, datelock, reasonlock, ';
 queryString += 'active) VALUES ';
 c = 0;
 for (r of arr3){
-   queryString += '('+r['empid']+',"'+r['datelock']+'","';
+   queryString += '('+r['empid']+',"'+r['datelock2']+'","';
    queryString += r['reasonlock']+'",'+r['active']+')';
    if (c == arr3.length-1){
       queryString += ';';
@@ -894,7 +914,7 @@ connection.query(queryString, function(err, rows, fields) {
 			   "note" , "VARCHAR(255)"},
 */
 
-var queryString = 'INSERT INTO Locks (empid, hourlyrate, '; 
+var queryString = 'INSERT INTO Salary (empid, hourlyrate, '; 
 queryString += 'note) VALUES ';
 c = 0;
 for (r of arr5){
