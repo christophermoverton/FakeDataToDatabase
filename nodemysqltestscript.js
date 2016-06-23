@@ -89,6 +89,16 @@ function boolval(boolv){
    }
 }
 
+function getIDs(popul){
+   var i = 0;
+   IDs = [];
+   while( i < popul){
+      IDs.push(i);
+      i++;
+   }
+   return IDs;
+}
+
 var mysql = require('mysql');
 var faker = require('faker');
 var Faker = require('Faker');
@@ -343,7 +353,8 @@ for (r in empSalaryDat){
    fDat = {};
    var empDat = empSalaryDat[r];
    fDat['empid'] = r;
-   fDat['hourlyrate'] = empDat['hourlyrate'];
+   fDat['hourlyrate'] = empDat['hourlypay'];
+   //console.log("fDat Salary: " +fDat);
    fDat['note'] = "";
    arr5.push(fDat);
 }
@@ -368,8 +379,12 @@ for (i = 1; i < maxJobids; i++){
 			   "picture", "VARCHAR(255)"},
 */
 arr7 = [];
-var emps = chance.unique(chance.integer, empnumber);
-var lemps = chance.unique(chance.integer, empnumber);
+
+//var emps = chance.unique(chance.integer, empnumber);
+//var lemps = chance.unique(chance.integer, empnumber);
+var emps = getIDs(empnumber);
+var lemps = getIDs(empnumber);
+
 var imagetypes = new Set(["JPEG", "GIF", "PNG", "TIFF", "BMP"]);
 for (empID in empSalaryDat){
    fDat = {};
@@ -391,17 +406,24 @@ arr8 = [];
 var categories = new Set();
 var catdesc = [];
 for (i = 0; i<8; i++){
-   categories.add(faker.lorem.word());
    catdesc.push(faker.lorem.words());
 }
+while(categories.size < 8){
+   categories.add(faker.lorem.word());
+}
+//console.log("catdesc: "+catdesc);
+
 categories = Array.from(categories);
+//console.log("categories: "+categories);
 for(empID in empSalaryDat){
    fDat = {};
    fDat['empid'] = empID;
-   var id = chance.integer({min:1, max: categories.size});
+   var id = chance.integer({min:0, max: categories.length-1});
+   //console.log("id: "+id);
    fDat['catname'] = categories[id];
    fDat['catdesc'] = catdesc[id];
    fDat['miscnote'] = "";
+   //console.log(fDat);
    arr8.push(fDat);
 }
 
@@ -941,7 +963,7 @@ connection.query(queryString, function(err, rows, fields) {
 	      new String[]{"Jobtitle", "jobid", "INTEGER not NULL", 
                            "jobtitle", "VARCHAR(255)", "jobdesc", "VARCHAR(255)"}, 
 */
-var queryString = 'INSERT INTO Locks (jobid, jobtitle, jobdesc '; 
+var queryString = 'INSERT INTO Jobtitle (jobid, jobtitle, jobdesc '; 
 queryString += ') VALUES ';
 c = 0;
 for (r of arr6){
